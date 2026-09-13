@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/ECG_50_Open_Interpretation_For_Her.html"
+    }
+  ]
+}

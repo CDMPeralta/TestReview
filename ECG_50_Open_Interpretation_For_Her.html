@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🩺 50 ECG Open Interpretation Challenge ❤️</title>
+  <style>
+    :root {
+      --primary: #0284c7;
+      --primary-dark: #0369a1;
+      --secondary: #0f172a;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --ecg-bg: #fff5f5;
+      --ecg-grid-major: #f87171;
+      --ecg-grid-minor: #fecaca;
+      --ecg-trace: #991b1b;
+      --correct: #10b981;
+      --correct-bg: #ecfdf5;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: #1e293b;
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+    }
+    .wrapper {
+      max-width: 580px;
+      width: 100%;
+      background: var(--card);
+      border-radius: 24px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.08);
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+    }
+    .header {
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 40%, #e11d48 100%);
+      color: white;
+      padding: 22px 20px 18px;
+      text-align: center;
+    }
+    .header-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.22);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .header h1 {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+    .header p {
+      margin-top: 4px;
+      font-size: 13px;
+      opacity: 0.92;
+    }
+    .nav-toggle {
+      display: flex;
+      background: rgba(255,255,255,0.22);
+      border-radius: 10px;
+      margin-top: 12px;
+      padding: 3px;
+      gap: 4px;
+    }
+    .nav-btn {
+      flex: 1;
+      padding: 8px 10px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .nav-btn.active {
+      background: white;
+      color: var(--primary-dark);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .progress-wrap {
+      background: rgba(255,255,255,0.25);
+      height: 6px;
+      border-radius: 3px;
+      margin-top: 12px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 2%;
+      background: #fecdd3;
+      transition: width 0.3s ease;
+    }
+    .content-area {
+      padding: 20px;
+    }
+    .strip-container {
+      background-color: var(--ecg-bg);
+      border: 1.5px solid var(--ecg-grid-major);
+      border-radius: 14px;
+      padding: 8px 4px 6px;
+      margin-bottom: 16px;
+      position: relative;
+      background-image: 
+        linear-gradient(var(--ecg-grid-major) 1px, transparent 1px),
+        linear-gradient(90deg, var(--ecg-grid-major) 1px, transparent 1px),
+        linear-gradient(var(--ecg-grid-minor) 0.5px, transparent 0.5px),
+        linear-gradient(90deg, var(--ecg-grid-minor) 0.5px, transparent 0.5px);
+      background-size: 25px 25px, 25px 25px, 5px 5px, 5px 5px;
+    }
+    .strip-tag {
+      position: absolute;
+      top: 6px;
+      left: 10px;
+      font-size: 10px;
+      font-weight: 800;
+      color: #b91c1c;
+      background: rgba(255,255,255,0.85);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .lead-tag {
+      position: absolute;
+      top: 6px;
+      right: 10px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #1e293b;
+      background: rgba(255,255,255,0.85);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .question-prompt {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--secondary);
+      line-height: 1.45;
+      margin-bottom: 14px;
+    }
+    .input-field {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1.5px solid #cbd5e1;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      margin-bottom: 12px;
+    }
+    .input-field:focus {
+      border-color: var(--primary);
+    }
+    .reveal-btn {
+      width: 100%;
+      padding: 12px;
+      background: #f8fafc;
+      border: 1.5px dashed #94a3b8;
+      border-radius: 12px;
+      color: #334155;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-bottom: 14px;
+      transition: all 0.2s;
+    }
+    .reveal-btn:hover {
+      background: #f1f5f9;
+      border-color: var(--primary);
+    }
+    .answer-box {
+      display: none;
+      background: #ecfdf5;
+      border: 1.5px solid #10b981;
+      padding: 14px;
+      border-radius: 12px;
+      margin-bottom: 14px;
+      animation: fadeIn 0.25s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .ans-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #065f46;
+      margin-bottom: 6px;
+    }
+    .ans-pearl {
+      font-size: 13px;
+      color: #1e293b;
+      line-height: 1.45;
+    }
+    .nav-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .action-btn {
+      flex: 1;
+      padding: 13px;
+      background: var(--secondary);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .action-btn:hover { opacity: 0.92; }
+    .action-btn.secondary-action {
+      background: #e2e8f0;
+      color: #334155;
+    }
+    /* Flashcard / Study list view */
+    .study-screen {
+      display: none;
+      padding: 16px 20px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .study-card {
+      border-bottom: 1px solid #e2e8f0;
+      padding: 18px 0;
+    }
+    .study-card:last-child { border-bottom: none; }
+    .spoiler-bar {
+      background: #0f172a;
+      color: #0f172a;
+      border-radius: 6px;
+      padding: 6px 12px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s;
+      font-size: 13.5px;
+      display: inline-block;
+      margin-top: 6px;
+    }
+    .spoiler-bar.revealed {
+      background: #ecfdf5;
+      color: #065f46;
+      font-weight: 700;
+      border: 1px solid #10b981;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="wrapper">
+    <div class="header">
+      <div class="header-badge">🩺 Open ECG Interpretation</div>
+      <h1>50 ECG Challenge For Her ❤️</h1>
+      <p id="sub-counter">Case 1 of 50</p>
+      
+      <div class="nav-toggle">
+        <button class="nav-btn active" id="btn-card-mode" onclick="switchMode('cards')">Card by Card</button>
+        <button class="nav-btn" id="btn-list-mode" onclick="switchMode('list')">All 50 (Tap to Reveal)</button>
+      </div>
+
+      <div class="progress-wrap" id="progress-container">
+        <div class="progress-fill" id="progress-bar"></div>
+      </div>
+    </div>
+
+    <!-- Card-by-Card View -->
+    <div class="content-area" id="cards-view">
+      <div class="strip-container">
+        <span class="strip-tag">RHYTHM STRIP (25 mm/s)</span>
+        <span class="lead-tag" id="lead-label">Lead II</span>
+        <div id="svg-mount" style="padding-top: 14px;"></div>
+      </div>
+      <div class="question-prompt" id="question-text"></div>
+      
+      <input type="text" class="input-field" id="user-input" placeholder="Type your diagnosis here (or just tap reveal below)..." />
+      <button class="reveal-btn" id="reveal-btn" onclick="revealCurrentAnswer()">🔍 Tap to Reveal Correct Diagnosis</button>
+      
+      <div class="answer-box" id="answer-box">
+        <div class="ans-title" id="ans-diagnosis"></div>
+        <div class="ans-pearl" id="ans-pearl"></div>
+      </div>
+
+      <div class="nav-actions">
+        <button class="action-btn secondary-action" onclick="prevCase()">⬅ Previous</button>
+        <button class="action-btn" onclick="nextCase()">Next Case ➔</button>
+      </div>
+    </div>
+
+    <!-- All-in-One List View -->
+    <div class="study-screen" id="list-view"></div>
+  </div>
+
+  <script>
+    const cases = [
+      {
+        lead: "Lead III / aVF",
+        text: "Wide-complex, monomorphic rhythm at ~180 bpm with regular R-R intervals and QRS > 0.16s:",
+        diagnosis: "Ventricular Tachycardia (VT)",
+        pearl: "Regular wide-complex tachycardia (>0.12s) is VT until proven otherwise. Look for AV dissociation, capture beats, or fusion beats.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 L 25 35 L 35 8 L 55 62 L 70 8 L 90 62 L 105 8 L 125 62 L 140 8 L 160 62 L 175 8 L 195 62 L 210 8 L 230 62 L 245 8 L 265 62 L 280 8 L 300 62 L 315 8 L 335 62 L 350 8 L 370 62 L 385 35" fill="none" stroke="#991b1b" stroke-width="2.2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Every P wave is conducted with a uniform, prolonged PR interval (> 0.20s) and zero dropped beats:",
+        diagnosis: "First-Degree AV Block",
+        pearl: "'If the R is far from P, then you have a First Degree!' Uniform PR delay with 1:1 AV conduction.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 5 35 Q 15 26 25 35 L 55 35 L 60 45 L 65 10 L 70 50 L 75 35 Q 85 24 95 35 L 135 35 Q 145 26 155 35 L 185 35 L 190 45 L 195 10 L 200 50 L 205 35 Q 215 24 225 35 L 265 35 Q 275 26 285 35 L 315 35 L 320 45 L 325 10 L 330 50 L 335 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "PR interval progressively lengthens beat-to-beat until an atrial impulse completely fails to conduct (dropped QRS):",
+        diagnosis: "Second-Degree AV Block, Mobitz Type 1 (Wenckebach)",
+        pearl: "'Longer, longer, longer, drop! Then you have a Wenckebach!' Usually localized to the AV node and follows a benign course.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 5 35 Q 15 27 25 35 L 35 35 L 40 45 L 45 10 L 50 50 L 55 35 L 80 35 Q 90 27 100 35 L 125 35 L 130 45 L 135 10 L 140 50 L 145 35 L 175 35 Q 185 27 195 35 L 235 35 L 240 45 L 245 10 L 250 50 L 255 35 L 290 35 Q 300 27 310 35 L 385 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead V1",
+        text: "Constant PR intervals in conducted beats with intermittent, unannounced dropped QRS complexes:",
+        diagnosis: "Second-Degree AV Block, Mobitz Type 2",
+        pearl: "'If some Ps don't get through, then you have a Mobitz II!' Usually infranodal with high risk of progressing to complete block.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 26 30 35 L 45 35 L 50 45 L 55 10 L 60 50 L 65 35 L 105 35 Q 115 26 125 35 L 140 35 L 145 45 L 150 10 L 155 50 L 160 35 L 205 35 Q 215 26 225 35 L 280 35 Q 290 26 300 35 L 315 35 L 320 45 L 325 10 L 330 50 L 335 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "P waves march out regularly (~75 bpm) and QRS complexes march out regularly (~35 bpm) with complete dissociation:",
+        diagnosis: "Third-Degree (Complete) AV Block",
+        pearl: "'If the P and Q don't agree, then you have a Third Degree!' Complete AV dissociation with independent atrial and ventricular pacemakers.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 26 30 35 L 75 35 Q 85 26 95 35 L 110 46 L 115 10 L 120 52 L 125 35 L 155 35 Q 165 26 175 35 L 225 35 Q 235 26 245 35 L 255 46 L 260 10 L 265 52 L 270 35 L 305 35 Q 315 26 325 35 L 380 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II / aVF",
+        text: "Continuous regular 'sawtooth' baseline flutter waves at ~300 bpm with regular 2:1 conduction (~150 bpm):",
+        diagnosis: "Atrial Flutter (with 2:1 block)",
+        pearl: "Macro-reentrant loop around the tricuspid valve creating inverted sawtooth waves in inferior leads.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 L 20 45 L 30 25 L 40 45 L 50 25 L 55 48 L 60 8 L 65 52 L 70 35 L 80 45 L 90 25 L 100 45 L 110 25 L 115 48 L 120 8 L 125 52 L 130 35 L 140 45 L 150 25 L 160 45 L 170 25 L 175 48 L 180 8 L 185 52 L 190 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Irregularly irregular R-R intervals with absent discrete P waves and fine fibrillatory baseline undulations:",
+        diagnosis: "Atrial Fibrillation (AFib)",
+        pearl: "Irregularly irregular rhythm + no distinct P waves. Always calculate CHA₂DS₂-VASc to assess stroke risk!",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 5 35 Q 12 32 18 37 Q 24 33 30 35 L 33 46 L 36 10 L 40 50 L 43 35 Q 55 38 65 33 Q 75 37 85 34 L 88 46 L 91 10 L 95 50 L 98 35 Q 110 33 120 37 L 123 46 L 126 10 L 130 50 L 133 35 Q 150 33 170 38 Q 190 32 205 36 L 208 46 L 211 10 L 215 50 L 218 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Leads V1 - V4",
+        text: "Marked convex ST elevation > 4mm with tombstoning morphology across anterior precordial leads:",
+        diagnosis: "Anterior STEMI (LAD occlusion)",
+        pearl: "Anterior wall infarction caused by occlusion of the Left Anterior Descending (LAD) artery ('widowmaker').",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 26 30 35 L 50 35 L 55 45 L 60 10 L 65 20 Q 80 18 95 35 L 150 35 Q 160 26 170 35 L 190 35 L 195 45 L 200 10 L 205 20 Q 220 18 235 35 L 300 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead V1",
+        text: "Wide QRS (> 0.12s) with an rSR' (rabbit ears / M-shaped) pattern in Lead V1:",
+        diagnosis: "Right Bundle Branch Block (RBBB)",
+        pearl: "Remember WiLLiaM MaRRoW! An 'M' in V1 and 'W' in V6 indicates Right Bundle Branch Block.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 26 30 35 L 55 35 L 60 20 L 65 48 L 72 8 L 80 45 L 85 35 Q 95 42 105 35 L 155 35 Q 165 26 175 35 L 200 35 L 205 20 L 210 48 L 217 8 L 225 45 L 230 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Short PR interval (< 0.12s), widened QRS, and a slurred initial upstroke (delta wave):",
+        diagnosis: "Wolff-Parkinson-White (WPW) Syndrome",
+        pearl: "Ventricular pre-excitation via the accessory Bundle of Kent bypassing the AV node.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 26 30 35 L 42 35 L 52 24 L 58 8 L 65 50 L 70 35 Q 80 25 90 35 L 130 35 Q 140 26 150 35 L 162 35 L 172 24 L 178 8 L 185 50 L 190 35 Q 200 25 210 35 L 250 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Normal sinus beat followed in an alternating 1:1 pattern by an early, wide, bizarre QRS complex:",
+        diagnosis: "Ventricular Bigeminy",
+        pearl: "Every normal sinus beat is paired with an alternating premature ventricular contraction (PVC).",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 26 30 35 L 45 35 L 50 45 L 55 10 L 60 50 L 65 35 L 90 35 L 100 58 L 110 5 L 125 60 L 135 35 L 175 35 Q 185 26 195 35 L 210 35 L 215 45 L 220 10 L 225 50 L 230 35 L 255 35 L 265 58 L 275 5 L 290 60 L 300 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Polymorphic ventricular tachycardia twisting sinusoidally around the isoelectric line in the setting of long QT:",
+        diagnosis: "Torsades de Pointes",
+        pearl: "Polymorphic VT triggered by prolonged QTc (>500 ms). Emergency drug of choice: IV Magnesium Sulfate!",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 L 20 15 L 30 55 L 40 20 L 50 50 L 60 28 L 70 42 L 80 32 L 90 38 L 100 35 L 110 42 L 120 28 L 130 50 L 140 20 L 150 55 L 160 15 L 170 60 L 180 12 L 190 62 L 200 15" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II / V3",
+        text: "Tall, peaked, symmetric, tented T waves with narrow base across precordial leads in an ESRD patient:",
+        diagnosis: "Hyperkalemia",
+        pearl: "Earliest ECG manifestation of elevated potassium. Can progress to widened QRS and sine-wave arrest.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 26 30 35 L 50 35 L 55 45 L 60 10 L 65 48 L 70 35 L 75 35 L 85 5 L 95 35 L 135 35 Q 145 26 155 35 L 175 35 L 180 45 L 185 10 L 190 48 L 195 35 L 200 35 L 210 5 L 220 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Flattened T waves, ST depression, and prominent upright U waves (serum K+ < 2.5 mEq/L):",
+        diagnosis: "Hypokalemia",
+        pearl: "Hypokalemia suppresses repolarization, flattening T waves and producing prominent U waves.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 26 30 35 L 50 35 L 55 45 L 60 10 L 65 48 L 70 38 L 80 38 Q 88 34 95 35 Q 105 25 115 35 L 145 35 Q 155 26 165 35 L 185 35 L 190 45 L 195 10 L 200 48 L 205 38 L 215 38 Q 223 34 230 35 Q 240 25 250 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Leads V5 - V6",
+        text: "Downsloping, curved ('scooped') ST depression resembling Salvador Dalí's mustache:",
+        diagnosis: "Digitalis (Digoxin) Effect",
+        pearl: "Characteristic scooped ST depression indicating therapeutic level, not necessarily toxicity.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 26 30 35 L 50 35 L 55 45 L 60 10 L 65 48 Q 75 50 85 45 Q 92 38 100 35 L 140 35 Q 150 26 160 35 L 180 35 L 185 45 L 190 10 L 195 48 Q 205 50 215 45 Q 222 38 230 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II & aVR",
+        text: "Diffuse concave (saddle-shaped) ST elevation across multiple leads with reciprocal PR depression:",
+        diagnosis: "Acute Pericarditis",
+        pearl: "Diffuse saddle-shaped ST elevation with PR depression (reciprocal PR elevation and ST depression in aVR).",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 28 30 35 L 42 38 L 47 45 L 52 10 L 56 46 Q 68 28 85 24 Q 95 24 105 35 L 140 35 Q 150 28 160 35 L 172 38 L 177 45 L 182 10 L 186 46 Q 198 28 215 24 Q 225 24 235 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Leads V1 - V2",
+        text: "Coved ST elevation >= 2mm ending in an inverted T wave in right precordial leads:",
+        diagnosis: "Brugada Syndrome (Type 1)",
+        pearl: "Sodium channelopathy (SCN5A) conferring high risk of ventricular fibrillation and sudden cardiac arrest.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 26 30 35 L 50 35 L 55 45 L 60 10 L 65 20 Q 75 20 85 28 Q 92 48 100 35 L 150 35 Q 160 26 170 35 L 190 35 L 195 45 L 200 10 L 205 20 Q 215 20 225 28 Q 232 48 240 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Alternating beat-to-beat QRS amplitude in a patient with massive pericardial effusion:",
+        diagnosis: "Electrical Alternans (Cardiac Tamponade)",
+        pearl: "Produced by the heart mechanically swinging back and forth within a large fluid-filled pericardial sac.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 26 30 35 L 45 35 L 50 45 L 55 8 L 60 50 L 65 35 Q 75 25 85 35 L 115 35 Q 125 26 135 35 L 145 35 L 148 40 L 152 20 L 156 42 L 160 35 Q 170 28 180 35 L 210 35 Q 220 26 230 35 L 240 35 L 245 45 L 250 8 L 255 50 L 260 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Notched deflection at the J-point (Osborn wave / camel-hump sign) in a patient with hypothermia (29°C):",
+        diagnosis: "Hypothermia (Osborn / J Wave)",
+        pearl: "Characteristic hump at the QRS-ST junction seen in hypothermia, accompanied by bradycardia.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 26 30 35 L 50 35 L 55 45 L 60 10 L 65 40 Q 72 20 80 35 L 85 35 Q 95 24 105 35 L 160 35 Q 170 26 180 35 L 200 35 L 205 45 L 210 10 L 215 40 Q 222 20 230 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Wide QRS rhythm at 75 bpm (50-110 bpm) appearing immediately following successful coronary reperfusion/tPA:",
+        diagnosis: "Accelerated Idioventricular Rhythm (AIVR)",
+        pearl: "Benign ventricular reperfusion arrhythmia resulting from enhanced Purkinje automaticity; rarely requires treatment.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 L 30 35 L 40 58 L 55 10 L 75 62 L 85 35 Q 100 22 115 35 L 135 35 L 145 58 L 160 10 L 180 62 L 190 35 Q 205 22 220 35 L 240 35 L 250 58 L 265 10 L 285 62 L 295 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Sudden onset regular, narrow-complex tachycardia at ~190 bpm with hidden or retrograde P waves:",
+        diagnosis: "Paroxysmal Supraventricular Tachycardia (AVNRT/PSVT)",
+        pearl: "Micro-reentry within the AV node producing rapid narrow tachycardia, usually responsive to vagal maneuvers or IV adenosine.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 L 20 35 L 23 46 L 26 10 L 30 50 L 33 35 Q 43 25 50 35 L 60 35 L 63 46 L 66 10 L 70 50 L 73 35 Q 83 25 90 35 L 100 35 L 103 46 L 106 10 L 110 50 L 113 35 Q 123 25 130 35 L 140 35 L 143 46 L 146 10 L 150 50 L 153 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Irregular tachycardia showing at least 3 distinct P-wave morphologies and varying PR intervals at >100 bpm in severe COPD:",
+        diagnosis: "Multifocal Atrial Tachycardia (MAT)",
+        pearl: ">= 3 distinct P wave morphologies at rate >100 bpm. Strongly linked with hypoxia and COPD exacerbation.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 5 35 Q 15 22 25 35 L 35 35 L 38 46 L 41 10 L 45 50 L 48 35 L 65 35 Q 73 44 80 35 L 90 35 L 93 46 L 96 10 L 100 50 L 103 35 L 125 35 Q 135 28 140 22 Q 145 35 150 35 L 158 35 L 161 46 L 164 10 L 168 50 L 171 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Normal rhythm interrupted by an early abnormal P wave with normal narrow QRS, followed by an incomplete pause:",
+        diagnosis: "Premature Atrial Contraction (PAC)",
+        pearl: "Ectopic atrial focus firing prematurely. Resets the SA node, leading to an incomplete compensatory pause.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 26 30 35 L 50 35 L 55 45 L 60 10 L 65 50 L 70 35 Q 80 25 90 35 L 115 35 Q 123 20 130 35 L 140 35 L 145 45 L 150 10 L 155 50 L 160 35 Q 170 25 180 35 L 250 35 Q 260 26 270 35 L 290 35 L 295 45 L 300 10 L 305 50 L 310 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Two consecutive premature ventricular contractions occurring together in a row:",
+        diagnosis: "PVC Couplet (Pair)",
+        pearl: "Two consecutive PVCs. Three or more consecutive ventricular beats at >100 bpm is non-sustained VT.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 26 30 35 L 50 35 L 55 45 L 60 10 L 65 50 L 70 35 L 95 35 L 105 58 L 115 5 L 130 60 L 140 35 L 150 58 L 160 5 L 175 60 L 185 35 L 250 35 Q 260 26 270 35 L 290 35 L 295 45 L 300 10 L 305 50 L 310 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "A PVC lands directly on the vulnerable T-wave peak of the preceding beat, triggering polymorphic VT:",
+        diagnosis: "R-on-T Phenomenon",
+        pearl: "Ectopic ventricular impulse falls on the relative refractory period of the ventricle, frequently precipitating VT or VF.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 26 30 35 L 50 35 L 55 45 L 60 10 L 65 50 L 70 35 Q 85 24 95 35 L 98 62 L 108 8 L 120 62 L 130 12 L 142 58 L 152 18 L 165 54 L 175 22 L 190 50" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Totally chaotic, irregular, coarse baseline with no identifiable QRS complexes or P waves in cardiac arrest:",
+        diagnosis: "Coarse Ventricular Fibrillation (VF)",
+        pearl: "Lethal shockable arrest rhythm! Immediate high-quality CPR and early unsynchronized defibrillation are required.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 12 30 55 Q 40 18 50 48 Q 60 8 70 58 Q 80 22 90 50 Q 100 8 110 60 Q 120 25 130 45 Q 140 14 150 52 Q 160 20 170 48 Q 180 10 190 55 Q 200 35 210 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Regular sinus rhythm operating at a slow resting rate of 42 bpm with normal upright P waves and intervals:",
+        diagnosis: "Sinus Bradycardia",
+        pearl: "Normal sinus conduction below 60 bpm. Can be normal in conditioned athletes or secondary to ischemia/beta-blockers.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 26 30 35 L 60 35 L 65 45 L 70 10 L 75 50 L 80 35 Q 90 25 100 35 L 220 35 Q 230 26 240 35 L 270 35 L 275 45 L 280 10 L 285 50 L 290 35 Q 300 25 310 35 L 390 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Regular sinus rhythm with heart rate of 135 bpm, normal upright P waves in II, and normal PR/QRS:",
+        diagnosis: "Sinus Tachycardia",
+        pearl: "Rate 100-160 bpm originating from SA node. Physiological response to fever, hypovolemia, pain, or exercise.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 5 35 Q 12 26 19 35 L 30 35 L 33 45 L 36 10 L 40 50 L 43 35 Q 50 25 58 35 L 75 35 Q 82 26 89 35 L 100 35 L 103 45 L 106 10 L 110 50 L 113 35 Q 120 25 128 35 L 145 35 Q 152 26 159 35 L 170 35 L 173 45 L 176 10 L 180 50 L 183 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Failure of SA node firing causing an absent P-QRS-T pause that is NOT an exact multiple of the PP interval:",
+        diagnosis: "Sinus Arrest / Sinus Pause",
+        pearl: "Failure of SA automaticity. The pause duration does not mathematically equal a multiple of the normal P-P interval.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 5 35 Q 15 26 25 35 L 45 35 L 50 45 L 55 10 L 60 50 L 65 35 Q 75 25 85 35 L 105 35 Q 115 26 125 35 L 145 35 L 150 45 L 155 10 L 160 50 L 165 35 Q 175 25 185 35 L 310 35 Q 320 26 330 35 L 350 35 L 355 45 L 360 10 L 365 50 L 370 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Slow, regular rhythm at 48 bpm with narrow QRS and inverted retrograde P waves following each QRS:",
+        diagnosis: "Junctional Escape Rhythm (retrograde conduction)",
+        pearl: "AV junction pacemaker fires at 40-60 bpm with retrograde atrial activation causing inverted P waves in inferior leads.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 L 45 35 L 50 45 L 55 10 L 60 50 L 65 35 Q 72 45 80 35 Q 92 25 102 35 L 175 35 L 180 45 L 185 10 L 190 50 L 195 35 Q 202 45 210 35 Q 222 25 232 35 L 305 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Regular, wide QRS (>0.12s) escape rhythm at a very slow rate of 30 bpm with absent P waves:",
+        diagnosis: "Idioventricular Escape Rhythm",
+        pearl: "Ventricular focus firing at intrinsic rate of 20-40 bpm. The tertiary 'safety net' backup cardiac pacemaker.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 L 50 35 L 60 58 L 75 10 L 95 62 L 105 35 Q 120 22 135 35 L 240 35 L 250 58 L 265 10 L 285 62 L 295 35 Q 310 22 325 35 L 390 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead V6",
+        text: "Broad, notched monophasic R wave (>0.12s) with absent septal Q waves in lateral leads (I, aVL, V5-V6):",
+        diagnosis: "Left Bundle Branch Block (LBBB)",
+        pearl: "Remember WiLLiaM MaRRoW! 'M' in V6 and 'W' in V1 indicates LBBB. New LBBB with chest pain is a STEMI equivalent.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 26 30 35 L 50 35 L 55 42 L 60 12 L 65 16 L 70 10 L 78 45 L 85 35 Q 95 44 105 35 L 155 35 Q 165 26 175 35 L 195 35 L 200 42 L 205 12 L 210 16 L 215 10 L 223 45 L 230 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead I & aVF",
+        text: "Lead I is strongly POSITIVE (upright) and Lead aVF is strongly NEGATIVE (downward):",
+        diagnosis: "Left Axis Deviation (LAD)",
+        pearl: "Thumbs 'Leaving' each other (I up, aVF down) = Left Axis Deviation. Check Lead II to rule out physiologic axis.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 L 40 35 L 45 45 L 50 10 L 55 48 L 60 35 L 120 35 L 125 45 L 130 10 L 135 48 L 140 35 L 210 35 L 215 25 L 220 60 L 225 35 L 280 35 L 285 25 L 290 60 L 295 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead I & aVF",
+        text: "Lead I is predominantly NEGATIVE (downward) and Lead aVF is predominantly POSITIVE (upright):",
+        diagnosis: "Right Axis Deviation (RAD)",
+        pearl: "Thumbs 'Reaching' towards each other (I down, aVF up) = Right Axis Deviation. Associated with RVH, PE, or COPD.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 L 40 35 L 45 25 L 50 60 L 55 35 L 120 35 L 125 25 L 130 60 L 135 35 L 210 35 L 215 45 L 220 10 L 225 48 L 230 35 L 280 35 L 285 45 L 290 10 L 295 48 L 300 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Leads II, III, aVF",
+        text: "ST-segment elevation in inferior leads II, III, and aVF with reciprocal depression in Lead aVL:",
+        diagnosis: "Inferior STEMI (RCA occlusion)",
+        pearl: "Inferior wall supplied by Right Coronary Artery (~85-90%). Caution with nitrates due to severe preload dependence!",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 26 30 35 L 45 35 L 50 48 L 55 12 L 60 22 Q 75 20 85 35 L 140 35 Q 150 26 160 35 L 175 35 L 180 48 L 185 12 L 190 22 Q 205 20 215 35 L 270 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Leads I, aVL, V5, V6",
+        text: "ST elevation in lateral leads I, aVL, V5, V6 with reciprocal inferior depression. What vessel is occluded?",
+        diagnosis: "Lateral STEMI (Left Circumflex Artery / LCx)",
+        pearl: "Lateral myocardial wall supplied by LCx or diagonal branch of LAD.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 26 30 35 L 50 35 L 55 45 L 60 10 L 65 22 Q 78 20 90 35 L 140 35 Q 150 26 160 35 L 180 35 L 185 45 L 190 10 L 195 22 Q 208 20 220 35 L 270 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Leads V1 - V2",
+        text: "Horizontal ST depression with tall broad R waves (R > S) and upright T waves in V1-V2:",
+        diagnosis: "Posterior STEMI",
+        pearl: "Mirror-image reciprocal changes for posterior transmural infarction. Place posterior leads V7-V9 to confirm elevation.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 26 30 35 L 50 35 L 55 42 L 60 8 L 65 48 L 75 48 L 85 35 Q 95 24 105 35 L 150 35 Q 160 26 170 35 L 190 35 L 195 42 L 200 8 L 205 48 L 215 48 L 225 35 Q 235 24 245 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead V2 - V3",
+        text: "Deeply inverted or biphasic T waves in V2-V3 in a patient whose chest pain recently resolved:",
+        diagnosis: "Wellens' Syndrome (Critical LAD Stenosis)",
+        pearl: "Highly specific for impending massive anterior MI due to proximal LAD stenosis; requires urgent catheterization.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 26 30 35 L 45 35 L 50 45 L 55 10 L 60 50 L 65 35 Q 73 24 80 35 Q 88 48 98 35 L 145 35 Q 155 26 165 35 L 180 35 L 185 45 L 190 10 L 195 50 L 200 35 Q 208 24 215 35 Q 223 48 233 35 L 280 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Shortened QTc interval (<360 ms) with rapid take-off of T wave from QRS in hyperparathyroidism:",
+        diagnosis: "Hypercalcemia",
+        pearl: "Elevated calcium accelerates phase 2 ventricular repolarization, shortening the ST segment and total QT interval.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 26 30 35 L 45 35 L 50 45 L 55 8 L 60 48 L 63 35 Q 73 18 83 35 L 140 35 Q 150 26 160 35 L 175 35 L 180 45 L 185 8 L 190 48 L 193 35 Q 203 18 213 35 L 270 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Marked prolongation of the ST segment leading to an elongated QTc interval (>520 ms) with normal T wave morphology:",
+        diagnosis: "Hypocalcemia",
+        pearl: "Prolongs phase 2 action potential plateau; isolated lengthening of the ST segment without widening of the T wave.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 26 30 35 L 45 35 L 50 45 L 55 10 L 60 48 L 65 35 L 115 35 Q 128 20 140 35 L 200 35 Q 210 26 220 35 L 235 35 L 240 45 L 245 10 L 250 48 L 255 35 L 305 35 Q 318 20 330 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead V1 & V5",
+        text: "Deep S in V1 (22mm) + Tall R in V5 (24mm) = 46mm (>35mm) with asymmetric lateral ST depression:",
+        diagnosis: "Left Ventricular Hypertrophy (LVH) with Strain",
+        pearl: "Meets Sokolow-Lyon criteria (S in V1 + R in V5/V6 >= 35 mm). Secondary strain represents repolarization abnormality.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 26 30 35 L 45 35 L 48 40 L 53 2 L 60 52 L 68 38 Q 78 45 90 35 L 140 35 Q 150 26 160 35 L 175 35 L 178 40 L 183 2 L 190 52 L 198 38 Q 208 45 220 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Sharp vertical pacing spike immediately preceding a wide bizarre QRS complex:",
+        diagnosis: "Ventricular Pacemaker Rhythm",
+        pearl: "Pacing lead in right ventricle depolarizes myocardium via cell-to-cell spread, creating an artificial LBBB pattern.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 L 40 35 L 40 5 L 40 35 L 43 55 L 53 10 L 68 60 L 78 35 Q 90 22 105 35 L 150 35 L 150 5 L 150 35 L 153 55 L 163 10 L 178 60 L 188 35 Q 200 22 215 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Sharp vertical pacing spike fires repeatedly with NO ensuing P wave or QRS complex captured:",
+        diagnosis: "Pacemaker Failure to Capture",
+        pearl: "Stimulus generated but fails to depolarize myocardium. Causes include lead dislodgement, ischemia, or severe hyperkalemia.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 L 40 35 L 40 5 L 40 35 L 100 35 L 100 5 L 100 35 L 160 35 L 160 5 L 160 35 L 220 35 L 220 5 L 220 35 L 280 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead I",
+        text: "Lead I shows globally inverted P wave, negative QRS, and inverted T wave with normal precordial progression:",
+        diagnosis: "Arm Lead Reversal (Left Arm / Right Arm swap)",
+        pearl: "Swapping LA and RA inverts Lead I entirely. Dextrocardia looks similar in I but has loss of precordial R-wave progression.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 44 30 35 L 50 35 L 55 25 L 60 60 L 65 35 Q 75 45 85 35 L 140 35 Q 150 44 160 35 L 180 35 L 185 25 L 190 60 L 195 35 Q 205 45 215 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Erratic, jagged baseline undulations caused by shivering or Parkinsonian tremors, with QRS marching through:",
+        diagnosis: "Somatic Tremor Artifact",
+        pearl: "Skeletal muscle electrical activity artifact simulating flutter or VF. True regular QRS complexes march out unaffected.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 5 35 L 7 32 L 9 38 L 12 34 L 14 36 L 20 35 Q 26 28 32 35 L 36 33 L 40 45 L 44 10 L 48 50 L 51 35 L 54 38 L 57 32 L 60 36 Q 70 25 80 35 L 83 32 L 87 37 L 90 34" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Flat isoelectric line with zero electrical activity in two contiguous leads in an unresponsive patient:",
+        diagnosis: "Asystole",
+        pearl: "Non-shockable cardiac arrest state. Verify lead connections, amplifier gain, and confirm in at least two leads.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 L 390 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Every second P wave conducts to the ventricles (2:1 AV relationship) with a constant PR in conducted beats:",
+        diagnosis: "2:1 Second-Degree AV Block",
+        pearl: "Cannot be conclusively classified as Mobitz I or II without advanced testing because consecutive PR intervals are not visible.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 Q 20 26 30 35 L 50 35 L 55 45 L 60 10 L 65 50 L 70 35 Q 80 25 90 35 L 120 35 Q 130 26 140 35 L 180 35 Q 190 26 200 35 L 220 35 L 225 45 L 230 10 L 235 50 L 240 35 Q 250 25 260 35 L 290 35 Q 300 26 310 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Narrow QRS rhythm at 85 bpm without identifiable P waves in a patient post-cardiac surgery:",
+        diagnosis: "Accelerated Junctional Rhythm",
+        pearl: "Rate between 60 and 100 bpm (above junction's normal 40-60 intrinsic rate, below tachycardia >100 bpm).",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 L 35 35 L 40 45 L 45 10 L 50 50 L 55 35 Q 65 24 75 35 L 110 35 L 115 45 L 120 10 L 125 50 L 130 35 Q 140 24 150 35 L 185 35 L 190 45 L 195 10 L 200 50 L 205 35 Q 215 24 225 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Leads I, II, III",
+        text: "Tall, peaked P wave in Lead II with amplitude > 2.5 mm in severe pulmonary hypertension ('P pulmonale'):",
+        diagnosis: "Right Atrial Enlargement (P Pulmonale)",
+        pearl: "Tall peaked P wave > 2.5 mm in inferior leads caused by chronic right atrial overload (COPD, pulmonary hypertension).",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 10 35 L 20 35 L 25 8 L 30 35 L 45 35 L 50 45 L 55 10 L 60 50 L 65 35 Q 75 25 85 35 L 130 35 L 135 8 L 140 35 L 155 35 L 160 45 L 165 10 L 170 50 L 175 35 Q 185 25 195 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      },
+      {
+        lead: "Lead II",
+        text: "Broad, notched M-shaped P wave with duration > 0.12s in Lead II ('P mitrale') from mitral stenosis:",
+        diagnosis: "Left Atrial Enlargement (P Mitrale)",
+        pearl: "Bifid notched P wave with interpeak notch > 0.04s, or biphasic P in V1 with deep negative terminal deflection.",
+        svg: `<svg viewBox="0 0 400 70" style="width:100%;"><path d="M 5 35 L 15 35 Q 22 22 28 26 Q 34 20 40 35 L 55 35 L 60 45 L 65 10 L 70 50 L 75 35 Q 85 25 95 35 L 130 35 Q 137 22 143 26 Q 149 20 155 35 L 170 35 L 175 45 L 180 10 L 185 50 L 190 35 Q 200 25 210 35" fill="none" stroke="#991b1b" stroke-width="2"/></svg>`
+      }
+    ];
+
+    let current = 0;
+
+    function renderCard() {
+      const c = cases[current];
+      document.getElementById('sub-counter').innerText = `Case ${current + 1} of ${cases.length}`;
+      document.getElementById('progress-bar').style.width = `${((current + 1) / cases.length) * 100}%`;
+      document.getElementById('lead-label').innerText = c.lead;
+      document.getElementById('svg-mount').innerHTML = c.svg;
+      document.getElementById('question-text').innerText = `${current + 1}. ${c.text}`;
+      
+      document.getElementById('user-input').value = '';
+      document.getElementById('answer-box').style.display = 'none';
+      document.getElementById('reveal-btn').style.display = 'block';
+    }
+
+    function revealCurrentAnswer() {
+      const c = cases[current];
+      document.getElementById('ans-diagnosis').innerText = `✅ Diagnosis: ${c.diagnosis}`;
+      document.getElementById('ans-pearl').innerText = `💡 Clinical Pearl: ${c.pearl}`;
+      document.getElementById('answer-box').style.display = 'block';
+      document.getElementById('reveal-btn').style.display = 'none';
+    }
+
+    function nextCase() {
+      if (current < cases.length - 1) {
+        current++;
+        renderCard();
+      } else {
+        alert("You finished all 50 cases! Amazing job reviewing! 🎉💖");
+      }
+    }
+
+    function prevCase() {
+      if (current > 0) {
+        current--;
+        renderCard();
+      }
+    }
+
+    function switchMode(mode) {
+      const cardBtn = document.getElementById('btn-card-mode');
+      const listBtn = document.getElementById('btn-list-mode');
+      const cardsView = document.getElementById('cards-view');
+      const listView = document.getElementById('list-view');
+      const pBar = document.getElementById('progress-container');
+
+      if (mode === 'cards') {
+        cardBtn.classList.add('active');
+        listBtn.classList.remove('active');
+        listView.style.display = 'none';
+        cardsView.style.display = 'block';
+        pBar.style.display = 'block';
+        renderCard();
+      } else {
+        listBtn.classList.add('active');
+        cardBtn.classList.remove('active');
+        cardsView.style.display = 'none';
+        pBar.style.display = 'none';
+        buildListView();
+        listView.style.display = 'block';
+      }
+    }
+
+    function buildListView() {
+      const mount = document.getElementById('list-view');
+      mount.innerHTML = '';
+      cases.forEach((c, idx) => {
+        const item = document.createElement('div');
+        item.className = 'study-card';
+        item.innerHTML = `
+          <div style="font-size:12px; font-weight:800; color:var(--primary); text-transform:uppercase;">Case ${idx + 1} • ${c.lead}</div>
+          <div style="font-size:14px; font-weight:700; margin: 4px 0 8px;">${c.text}</div>
+          <div class="strip-container">${c.svg}</div>
+          <div>
+            <span class="spoiler-bar" onclick="this.classList.toggle('revealed'); if(this.classList.contains('revealed')){ this.innerText = '✅ ' + '${c.diagnosis}'; } else { this.innerText = 'Tap to reveal diagnosis'; }">Tap to reveal diagnosis</span>
+          </div>
+          <div style="font-size:12.5px; color:#475569; margin-top:8px; line-height:1.4;">💡 ${c.pearl}</div>
+        `;
+        mount.appendChild(item);
+      });
+    }
+
+    renderCard();
+  </script>
+</body>
+</html>
